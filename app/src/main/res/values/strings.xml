@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">E621 browser</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="NSFW_activate">Enable NSFW content? \nYou must be 18 or older to view!</string>
+    <string name="NSFWmssg">Are you over 18 and willing to view explicit content?</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="search">Enter search tags</string>
+    <string name="taghelp">Space to separate tags, _ connect multiple words\n First Second_tag</string>
+    <string name="blacklist">Tag Blacklist</string>
+    <string name="gosearch">Search!</string>
+
+
+</resources>
