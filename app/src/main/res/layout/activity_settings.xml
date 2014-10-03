@@ -21,27 +21,57 @@
         android:layout_alignParentEnd="true"
         android:layout_alignBaseline="@+id/NSFWtxt"/>
     <Space
-        android:id="@+id/space2"
+        android:id="@+id/space1"
         android:layout_width="match_parent"
         android:layout_height="5dp"
         android:layout_below="@id/NSFWtxt"/>
     <View
-        android:id="@+id/space"
+        android:id="@+id/spacer1"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_below="@+id/space2"
+        android:layout_below="@+id/space1"
         android:background="@android:color/darker_gray"/>
     <Space
-        android:id="@+id/space1"
+        android:id="@+id/space2"
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_below="@id/spacer1"/>
+
+    <TextView
+        android:id="@+id/datatxt"
+        android:text="@string/datatext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="15sp"
+        android:layout_below="@+id/space2"/>
+    <CheckBox
+        android:id="@+id/datacb"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBaseline="@+id/datatxt"/>
+    <Space
+        android:id="@+id/space3"
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_below="@id/datatxt"/>
+    <View
+        android:id="@+id/spacer"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@+id/space3"
+        android:background="@android:color/darker_gray"/>
+    <Space
+        android:id="@+id/space4"
         android:layout_width="match_parent"
         android:layout_height="5dp" 
-        android:layout_below="@id/space"/>
+        android:layout_below="@id/spacer"/>
     <TextView
         android:id="@+id/BLtext"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/blacklist"
-        android:layout_below="@id/space1"
+        android:layout_below="@id/space4"
         android:textSize="20sp"/>
     <TextView
         android:id="@+id/tagtext"

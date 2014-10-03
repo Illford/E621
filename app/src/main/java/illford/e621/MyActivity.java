@@ -8,6 +8,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Point;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -49,8 +51,13 @@ public class MyActivity extends Activity {
      RecyclerView.LayoutManager mLayoutManager;
     int width;
     int height;
+    boolean isMobile;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ConnectivityManager cm =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+         isMobile = activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE;
         String url="https://e621.net/post/index.xml";
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);

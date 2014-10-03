@@ -50,6 +50,7 @@ CheckBox CB;
 
                                                   new AlertDialog.Builder(settings.this)
                                                       .setMessage(R.string.NSFWmssg)
+                                                          .setCancelable(false)
                                                       .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
                                                           public void onClick(DialogInterface dialog, int which) {
                                                               editor.putBoolean("NSFW",true);
@@ -58,7 +59,7 @@ CheckBox CB;
                                                       })
                                                       .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                                                           public void onClick(DialogInterface dialog, int which) {
-                                                              // do nothing
+                                                              CB.setChecked(false);
                                                           }
                                                       })
                                                       .setIcon(android.R.drawable.ic_dialog_alert)
