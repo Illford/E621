@@ -2,9 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="illford.e621" >
-
     <uses-sdk
-        tools:node="replace" />
+        android:minSdkVersion="14"
+        android:targetSdkVersion="19"
+        tools:overrideLibrary="android.support.v4,
+    android.support.v7.cardview,
+    android.support.v7.recyclerview,
+    android.support.v7.palette" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
