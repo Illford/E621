@@ -52,6 +52,7 @@ public class MyActivity extends Activity {
     int width;
     int height;
     boolean isMobile;
+    boolean forcefull;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         ConnectivityManager cm =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -62,6 +63,7 @@ public class MyActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
         SharedPreferences sharedPref =this.getSharedPreferences("com.illford.e621",Context.MODE_PRIVATE);
+        forcefull=sharedPref.getBoolean("forcefull",false);
         if(!sharedPref.getBoolean("NSFW",false)){
             url+="?tags=rating%3As";
         }
@@ -191,7 +193,11 @@ else { url+="?tags=";}
                 }
                 in.close();
                 html = str.toString();
-                Pattern p= Pattern.compile("file_url=\"(.*?)\"");
+                Pattern p;
+                if(forcefull||!isMobile){
+                 p= Pattern.compile("file_url=\"(.*?)\"");}
+                else{
+                    p= Pattern.compile("preview_url=\"(.*?)\"");}
                 Matcher m=p.matcher(html);
                 while( m.find()){
                     if(!m.group(1).contains(".swf")){

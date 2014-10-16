@@ -20,8 +20,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class settings extends Activity {
-CheckBox CB;
+CheckBox CB;//NSFW content
+    CheckBox CB2;//reduced bandwidth
     Boolean NSFW;
+    Boolean forcefull;
     SharedPreferences sharedPref;
       SharedPreferences.Editor editor;
     @Override
@@ -31,6 +33,7 @@ CheckBox CB;
        editor = sharedPref.edit();
         setContentView(R.layout.activity_settings);
         CB = (CheckBox)findViewById(R.id.NSFWcb);
+        CB2=(CheckBox)findViewById(R.id.datacb);
         EditText et=(EditText)findViewById(R.id.editblacklist);
         String BL="";
         Set<String>blset=sharedPref.getStringSet("blacklist",new HashSet<String>());
@@ -40,8 +43,12 @@ CheckBox CB;
         }
         et.setText(BL);
          NSFW = sharedPref.getBoolean("NSFW",false);
+        forcefull=sharedPref.getBoolean("forcefull",false);
         if(NSFW){
             CB.setChecked(true);
+        }
+        if(!forcefull){
+            CB2.setChecked(true);
         }
         CB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                                           @Override
@@ -72,6 +79,22 @@ CheckBox CB;
                                           }
                                       }
         );
+        CB2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                                          @Override
+                                          public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                                              if (isChecked) {
+                                                  editor.putBoolean("forcefull",false);
+                                                  editor.apply();
+                                              }
+                                              else{
+                                                  editor.putBoolean("forcefull",true);
+                                                  editor.apply();
+                                              }
+                                          }
+                                      }
+        );
+
+
      }
 
 
