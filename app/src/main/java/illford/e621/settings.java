@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CheckBox;
@@ -19,7 +21,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class settings extends Activity {
+public class settings extends ActionBarActivity {
 CheckBox CB;//NSFW content
     CheckBox CB2;//reduced bandwidth
     Boolean NSFW;
@@ -31,7 +33,10 @@ CheckBox CB;//NSFW content
         super.onCreate(savedInstanceState);
          sharedPref =this.getSharedPreferences("com.illford.e621",Context.MODE_PRIVATE);
        editor = sharedPref.edit();
-        setContentView(R.layout.activity_settings);
+        setContentView(R.layout.activity_settings);Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+        }
         CB = (CheckBox)findViewById(R.id.NSFWcb);
         CB2=(CheckBox)findViewById(R.id.datacb);
         EditText et=(EditText)findViewById(R.id.editblacklist);

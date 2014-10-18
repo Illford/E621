@@ -12,8 +12,11 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -42,7 +45,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class MyActivity extends Activity {
+public class MyActivity extends ActionBarActivity {
     public final static String EXTRA_MESSAGE = "com.illford.e621.MESSAGE";
     String html = "";
     ArrayList<String> fullImageUrl= new ArrayList<String>();
@@ -62,6 +65,11 @@ public class MyActivity extends Activity {
         String url="https://e621.net/post/index.xml";
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+           setSupportActionBar(toolbar);
+        }
         SharedPreferences sharedPref =this.getSharedPreferences("com.illford.e621",Context.MODE_PRIVATE);
         forcefull=sharedPref.getBoolean("forcefull",false);
         if(!sharedPref.getBoolean("NSFW",false)){
@@ -91,7 +99,7 @@ else { url+="?tags=";}
         mRecyclerView.setHasFixedSize(true);
 
         // use a linear layout manager
-        mLayoutManager = new LinearLayoutManager(this);
+        mLayoutManager = new StaggeredGridLayoutManager(2,1);
         mRecyclerView.setLayoutManager(mLayoutManager);
         // specify an adapter (see also next example)
         mAdapter = new MyAdapter(getApplicationContext());
@@ -263,7 +271,7 @@ else { url+="?tags=";}
         public void onBindViewHolder(ViewHolder holder, int position) {
             // - get element from your dataset at this position
             // - replace the contents of the view with that element
-            Picasso.with(context).setIndicatorsEnabled(true);
+           // Picasso.with(context).setIndicatorsEnabled(true);
             Picasso.with(context).load(fullImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width,height).centerInside().into(holder.mImageView);
             holder.mPos=position;
         }

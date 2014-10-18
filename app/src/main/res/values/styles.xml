@@ -1,8 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
 
     <!-- Base application theme. -->
-    <style name="HoloBlue" parent="android:Theme.Holo.Light.DarkActionBar">
-
-    </style>
+    <style name="HoloBlue" parent="HoloBlue.Base"/>
+        <style name="HoloBlue.Base" parent="Theme.AppCompat">
+         <item name="colorPrimary">#0099FF</item>
+         <item name="colorPrimaryDark">#007ACC</item>
+         <item name="android:windowNoTitle">true</item>
+         <item name="windowActionBar">false</item>
+        </style>
 
 </resources>
