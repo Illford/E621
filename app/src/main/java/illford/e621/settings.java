@@ -7,12 +7,17 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.internal.widget.AdapterViewCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -21,7 +26,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class settings extends ActionBarActivity {
+public class settings extends ActionBarActivity implements AdapterView.OnItemSelectedListener {
 CheckBox CB;//NSFW content
     CheckBox CB2;//reduced bandwidth
     Boolean NSFW;
@@ -33,10 +38,21 @@ CheckBox CB;//NSFW content
         super.onCreate(savedInstanceState);
          sharedPref =this.getSharedPreferences("com.illford.e621",Context.MODE_PRIVATE);
        editor = sharedPref.edit();
-        setContentView(R.layout.activity_settings);Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setContentView(R.layout.activity_settings);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
         }
+        Spinner spinner = (Spinner) findViewById(R.id.colpick);
+// Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.numbers, android.R.layout.simple_spinner_item);
+// Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+// Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(this);
+        spinner.setSelection(sharedPref.getInt("colcount",1)-1);
         CB = (CheckBox)findViewById(R.id.NSFWcb);
         CB2=(CheckBox)findViewById(R.id.datacb);
         EditText et=(EditText)findViewById(R.id.editblacklist);
@@ -126,7 +142,17 @@ CheckBox CB;//NSFW content
     editor.apply();
 
     }
+    public void onItemSelected(AdapterView<?> parent, View view,
+                               int pos, long id) {
+        // An item was selected. You can retrieve the selected item using
+        // parent.getItemAtPosition(pos)
+       editor.putInt("colcount",pos+1);editor.apply();
+    }
 
+    public void onNothingSelected(AdapterView<?> parent) {
+
+        //editor.putInt("colcount",1);
+    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will

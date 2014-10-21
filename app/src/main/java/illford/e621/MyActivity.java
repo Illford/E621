@@ -66,6 +66,7 @@ public class MyActivity extends ActionBarActivity {
     int width;
     int height;
     boolean useFull;
+    int colcount;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         ConnectivityManager cm =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -92,6 +93,7 @@ public class MyActivity extends ActionBarActivity {
             }
         });
         SharedPreferences sharedPref =this.getSharedPreferences("com.illford.e621",Context.MODE_PRIVATE);
+        colcount=sharedPref.getInt("colcount",2);
         useFull = !(activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)||sharedPref.getBoolean("forcefull",false);
         if(!sharedPref.getBoolean("NSFW",false)){
             url+="?tags=rating%3As";
@@ -120,7 +122,7 @@ else { url+="?tags=";}
         mRecyclerView.setHasFixedSize(true);
 
         // use a linear layout manager
-        mLayoutManager = new StaggeredGridLayoutManager(2,1);
+        mLayoutManager = new StaggeredGridLayoutManager(colcount,1);
         mRecyclerView.setLayoutManager(mLayoutManager);
         // specify an adapter (see also next example)
         mAdapter = new MyAdapter(getApplicationContext());
@@ -268,9 +270,9 @@ else { url+="?tags=";}
             // - replace the contents of the view with that element
            //Picasso.with(context).setIndicatorsEnabled(true);
             if(useFull)
-            Picasso.with(context).load(fullImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/2,height/2).centerInside().into(holder.mImageView);
+            Picasso.with(context).load(fullImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/colcount,height/colcount).centerInside().into(holder.mImageView);
             else
-                Picasso.with(context).load(thumbImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/2,height/2).centerInside().into(holder.mImageView);
+                Picasso.with(context).load(thumbImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/colcount,height/colcount).centerInside().into(holder.mImageView);
             holder.mPos=position;
 
             holder.mImageView.setOnClickListener(new View.OnClickListener() {

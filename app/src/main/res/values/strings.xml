@@ -13,6 +13,13 @@
     <string name="blacklist">Tag Blacklist</string>
     <string name="gosearch">Search!</string>
     <string name="datatext">Use low res on cellular data \n A page can take about 80MB</string>
-
+    <string name="colcount">Column count</string>
+    <string-array name="numbers">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
 
 </resources>
