@@ -12,7 +12,7 @@
     <string name="taghelp">Space to separate tags, _ connect multiple words\n First Second_tag</string>
     <string name="blacklist">Tag Blacklist</string>
     <string name="gosearch">Search!</string>
-    <string name="datatext">Reduce data usage by pulling low res images on cellular data \n A page of images can take about 80MB</string>
+    <string name="datatext">Use low res on cellular data \n A page can take about 80MB</string>
 
 
 </resources>

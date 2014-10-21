@@ -1,32 +1,40 @@
 package illford.e621;
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Fragment;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Point;
+import android.graphics.PointF;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
-
+import android.widget.TextView;
+import illford.e621.TouchImageView;
 import com.squareup.picasso.Picasso;
 
 import org.apache.http.HttpResponse;
@@ -46,22 +54,23 @@ import java.util.regex.Pattern;
 
 
 public class MyActivity extends ActionBarActivity {
+    private Animator mCurrentAnimator;
+    private int mShortAnimationDuration;
     public final static String EXTRA_MESSAGE = "com.illford.e621.MESSAGE";
     String html = "";
     ArrayList<String> fullImageUrl= new ArrayList<String>();
+    ArrayList<String> thumbImageUrl= new ArrayList<String>();
      RecyclerView mRecyclerView;
      MyAdapter mAdapter;
      RecyclerView.LayoutManager mLayoutManager;
     int width;
     int height;
-    boolean isMobile;
-    boolean forcefull;
+    boolean useFull;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         ConnectivityManager cm =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-         isMobile = activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE;
         String url="https://e621.net/post/index.xml";
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
@@ -70,8 +79,20 @@ public class MyActivity extends ActionBarActivity {
         if (toolbar != null) {
            setSupportActionBar(toolbar);
         }
+        final EditText editText = (EditText) findViewById(R.id.editsearch);
+        editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                boolean handled = false;
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    search(editText);
+                    handled = true;
+                }
+                return handled;
+            }
+        });
         SharedPreferences sharedPref =this.getSharedPreferences("com.illford.e621",Context.MODE_PRIVATE);
-        forcefull=sharedPref.getBoolean("forcefull",false);
+        useFull = !(activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)||sharedPref.getBoolean("forcefull",false);
         if(!sharedPref.getBoolean("NSFW",false)){
             url+="?tags=rating%3As";
         }
@@ -127,11 +148,7 @@ else { url+="?tags=";}
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-             startSettings();
-        }
-        else if(id ==R.id.search){
-            searchdialog();
-
+            startSettings();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -139,16 +156,9 @@ else { url+="?tags=";}
         Intent intent = new Intent(this, settings.class);
         startActivity(intent);
     }
-    public void searchdialog(){
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        final LayoutInflater inflater = this.getLayoutInflater();
-        final View v=inflater.inflate(R.layout.searchdialog, null);
-        builder.setView(v)
-                .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
+    public void search(View v){
                         String searchtxt="";
-                        EditText et=(EditText)v.findViewById(R.id.editsearch);
+                        EditText et=(EditText)findViewById(R.id.editsearch);
                         String BLtxt=et.getText().toString();
 
                         Pattern p= Pattern.compile("(\\w+)");
@@ -159,30 +169,11 @@ else { url+="?tags=";}
                         }
                         Intent intent = new Intent(MyActivity.this,MyActivity.class);
                         intent.putExtra(EXTRA_MESSAGE, searchtxt);
+        InputMethodManager imm = (InputMethodManager)getSystemService(
+                Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(et.getWindowToken(), 0);
                         startActivity(intent);
-                    }
-                })
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        // do nothing
-                    }
-                })
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .show();
     }
-    public static class PlaceholderFragment extends Fragment {
-
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-            return inflater.inflate(R.layout.fragment_my, container, false);
-
-        }
-    }
-
 
     private class getindex extends AsyncTask <String,Void,String>{
         protected  String doInBackground(String... urls) {
@@ -202,15 +193,19 @@ else { url+="?tags=";}
                 in.close();
                 html = str.toString();
                 Pattern p;
-                if(forcefull||!isMobile){
-                 p= Pattern.compile("file_url=\"(.*?)\"");}
-                else{
-                    p= Pattern.compile("preview_url=\"(.*?)\"");}
+                 p= Pattern.compile("file_url=\"(.*?)\"");
                 Matcher m=p.matcher(html);
                 while( m.find()){
                     if(!m.group(1).contains(".swf")){
                         fullImageUrl.add(m.group(1));
                       }
+                }
+                p= Pattern.compile("preview_url=\"(.*?)\"");
+                 m=p.matcher(html);
+                while( m.find()){
+                    if(!m.group(1).contains(".swf")){
+                        thumbImageUrl.add(m.group(1));
+                    }
                 }
 
 
@@ -239,11 +234,11 @@ else { url+="?tags=";}
         // Provide a reference to the type of views that you are using
         // (custom viewholder)
         public  class ViewHolder extends RecyclerView.ViewHolder {
-            public ImageView mImageView;
+            public ImageButton mImageView;
             public int mPos;
             public ViewHolder(View v) {
                 super(v);
-                mImageView = (ImageView) v.findViewById(R.id.image);
+                mImageView = (ImageButton) v.findViewById(R.id.image);
 
             }
         }
@@ -268,16 +263,128 @@ else { url+="?tags=";}
         }
         // Replace the contents of a view (invoked by the layout manager)
         @Override
-        public void onBindViewHolder(ViewHolder holder, int position) {
+        public void onBindViewHolder(final ViewHolder holder, final int position) {
             // - get element from your dataset at this position
             // - replace the contents of the view with that element
-           // Picasso.with(context).setIndicatorsEnabled(true);
-            Picasso.with(context).load(fullImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width,height).centerInside().into(holder.mImageView);
+           //Picasso.with(context).setIndicatorsEnabled(true);
+            if(useFull)
+            Picasso.with(context).load(fullImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/2,height/2).centerInside().into(holder.mImageView);
+            else
+                Picasso.with(context).load(thumbImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/2,height/2).centerInside().into(holder.mImageView);
             holder.mPos=position;
+
+            holder.mImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    zoomImageFromThumb(holder.mImageView,fullImageUrl.get(position) );
+                }
+            });
+            mShortAnimationDuration = getResources().getInteger(android.R.integer.config_shortAnimTime);
+        }
+        private void zoomImageFromThumb(final View thumbView,String URL){
+            final ImageView zoomView=(TouchImageView)findViewById(R.id.expanded_image);
+            if(mCurrentAnimator!=null){
+                mCurrentAnimator.cancel();
+            }
+            Picasso.with(context).load(URL).placeholder(R.drawable.ic_action_refresh).into(zoomView);
+            final Rect startBounds=new Rect();
+            final Rect finalBounds =new Rect();
+            final Point globalOffset=new Point();
+            thumbView.getGlobalVisibleRect(startBounds);
+            findViewById(R.id.container).getGlobalVisibleRect(finalBounds,globalOffset);
+            startBounds.offset(-globalOffset.x,-globalOffset.y);
+            finalBounds.offset(-globalOffset.x,-globalOffset.y);
+            float startScale;
+            if((float)finalBounds.width()/finalBounds.height()>(float)startBounds.width()/startBounds.height()){
+                startScale=(float)startBounds.height()/finalBounds.height();
+                float startWidth=startScale*finalBounds.width();
+                float deltaWidth = (startWidth - startBounds.width()) / 2;
+                startBounds.left -= deltaWidth;
+                startBounds.right += deltaWidth;
+            }else {
+                startScale = (float) startBounds.width() / finalBounds.width();
+                float startHeight = startScale * finalBounds.height();
+                float deltaHeight = (startHeight - startBounds.height()) / 2;
+                startBounds.top -= deltaHeight;
+                startBounds.bottom += deltaHeight;
+            }
+            thumbView.setAlpha(0f);
+            zoomView.setVisibility(View.VISIBLE);
+            zoomView.setPivotX(0f);
+            zoomView.setPivotY(0f);
+            AnimatorSet set = new AnimatorSet();
+            set
+                    .play(ObjectAnimator.ofFloat(zoomView, View.X,
+                            startBounds.left, finalBounds.left))
+                    .with(ObjectAnimator.ofFloat(zoomView, View.Y,
+                            startBounds.top, finalBounds.top))
+                    .with(ObjectAnimator.ofFloat(zoomView, View.SCALE_X,
+                            startScale, 1f)).with(ObjectAnimator.ofFloat(zoomView,
+                    View.SCALE_Y, startScale, 1f));
+            set.setDuration(mShortAnimationDuration);
+            set.setInterpolator(new DecelerateInterpolator());
+            set.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mCurrentAnimator = null;
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+                    mCurrentAnimator = null;
+                }
+            });
+            set.start();
+            mCurrentAnimator = set;
+
+            // Upon clicking the zoomed-in image, it should zoom back down
+            // to the original bounds and show the thumbnail instead of
+            // the expanded image.
+            final float startScaleFinal = startScale;
+            zoomView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (mCurrentAnimator != null) {
+                        mCurrentAnimator.cancel();
+                    }
+
+                    // Animate the four positioning/sizing properties in parallel,
+                    // back to their original values.
+                    AnimatorSet set = new AnimatorSet();
+                    set.play(ObjectAnimator
+                            .ofFloat(zoomView, View.X, startBounds.left))
+                            .with(ObjectAnimator
+                                    .ofFloat(zoomView,
+                                            View.Y,startBounds.top))
+                            .with(ObjectAnimator
+                                    .ofFloat(zoomView,
+                                            View.SCALE_X, startScaleFinal))
+                            .with(ObjectAnimator
+                                    .ofFloat(zoomView,
+                                            View.SCALE_Y, startScaleFinal));
+                    set.setDuration(mShortAnimationDuration);
+                    set.setInterpolator(new DecelerateInterpolator());
+                    set.addListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            thumbView.setAlpha(1f);
+                            zoomView.setVisibility(View.GONE);
+                            mCurrentAnimator = null;
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+                            thumbView.setAlpha(1f);
+                            zoomView.setVisibility(View.GONE);
+                            mCurrentAnimator = null;
+                        }
+                    });
+                    set.start();
+                    mCurrentAnimator = set;
+                }
+            });
         }
     }
-
-
 
 
 }

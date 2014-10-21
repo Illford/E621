@@ -8,10 +8,13 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/HoloBlue" >
+        android:theme="@style/HoloBlue"
+        >
         <activity
             android:name="illford.e621.MyActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:configChanges=""
+            android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -21,7 +24,8 @@
         <activity
             android:name="illford.e621.settings"
             android:label="@string/action_settings"
-            android:parentActivityName="illford.e621.MyActivity" >
+            android:parentActivityName="illford.e621.MyActivity"
+            android:windowSoftInputMode="stateHidden">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="illford.e621.MyActivity" />
