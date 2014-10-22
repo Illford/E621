@@ -40,6 +40,7 @@ CheckBox CB;//NSFW content
        editor = sharedPref.edit();
         setContentView(R.layout.activity_settings);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setLogo(R.drawable.ic_launcher2);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
         }
@@ -51,6 +52,7 @@ CheckBox CB;//NSFW content
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 // Apply the adapter to the spinner
         spinner.setAdapter(adapter);
+
         spinner.setOnItemSelectedListener(this);
         spinner.setSelection(sharedPref.getInt("colcount",1)-1);
         CB = (CheckBox)findViewById(R.id.NSFWcb);
