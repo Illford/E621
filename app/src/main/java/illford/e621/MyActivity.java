@@ -76,9 +76,8 @@ public class MyActivity extends ActionBarActivity {
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setLogo(R.drawable.ic_launcher2);
-        if (toolbar != null) {
+       toolbar.setTitle("");
            setSupportActionBar(toolbar);
-        }
         final EditText editText = (EditText) findViewById(R.id.editsearch);
         editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
