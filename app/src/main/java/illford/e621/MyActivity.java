@@ -33,6 +33,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.melnykov.fab.FloatingActionButton;
 import com.squareup.picasso.Picasso;
 
 import org.apache.http.HttpResponse;
@@ -55,6 +57,7 @@ public class MyActivity extends ActionBarActivity {
     private Animator mCurrentAnimator;
     private int mShortAnimationDuration;
     public final static String EXTRA_MESSAGE = "com.illford.e621.MESSAGE";
+    public final static String PAGE= "com.illford.e621.PAGE";
     String html = "";
     ArrayList<String> fullImageUrl= new ArrayList<String>();
     ArrayList<String> thumbImageUrl= new ArrayList<String>();
@@ -63,6 +66,8 @@ public class MyActivity extends ActionBarActivity {
      RecyclerView.LayoutManager mLayoutManager;
     int width;
     int height;
+    int page=1;
+    String search="";
     boolean useFull;
     int colcount;
     @Override
@@ -71,6 +76,10 @@ public class MyActivity extends ActionBarActivity {
 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         String url="https://e621.net/post/index.xml";
+        Intent intent = getIntent();
+        if(intent.getStringExtra(MyActivity.PAGE)!=null)
+        page=Integer.parseInt(intent.getStringExtra(MyActivity.PAGE));
+        url+="?page="+page;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
 
@@ -105,9 +114,14 @@ else { url+="?tags=";}
                 BL += "+-" + BLset[x];
             }
             url += BL;
-        Intent intent = getIntent();
-        String message = intent.getStringExtra(MyActivity.EXTRA_MESSAGE);
-        url+=message;
+        search = intent.getStringExtra(MyActivity.EXTRA_MESSAGE);
+if(search!=null){
+        Pattern p= Pattern.compile("(\\w+)");
+        Matcher m=p.matcher(search);
+        while( m.find()){
+            url+="+"+m.group(1);
+
+        }}
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
@@ -173,6 +187,13 @@ else { url+="?tags=";}
                 Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(et.getWindowToken(), 0);
                         startActivity(intent);
+    }
+    public void next(View v){
+        page++;
+        Intent intent=new Intent(MyActivity.this,MyActivity.class);
+        intent.putExtra(PAGE,page+"");
+        intent.putExtra(EXTRA_MESSAGE, search);
+        startActivity(intent);
     }
 
     private class getindex extends AsyncTask <String,Void,String>{
