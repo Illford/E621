@@ -9,6 +9,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/HoloBlue"
+        android:largeHeap="true"
         >
         <activity
             android:name="illford.e621.MyActivity"

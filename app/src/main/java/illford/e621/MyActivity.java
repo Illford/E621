@@ -7,6 +7,7 @@ import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.net.ConnectivityManager;
@@ -33,9 +34,12 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.melnykov.fab.FloatingActionButton;
+import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Transformation;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -77,9 +81,6 @@ public class MyActivity extends ActionBarActivity {
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         String url="https://e621.net/post/index.xml";
         Intent intent = getIntent();
-        if(intent.getStringExtra(MyActivity.PAGE)!=null)
-        page=Integer.parseInt(intent.getStringExtra(MyActivity.PAGE));
-        url+="?page="+page;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
 
@@ -122,6 +123,9 @@ if(search!=null){
             url+="+"+m.group(1);
 
         }}
+        if(intent.getStringExtra(MyActivity.PAGE)!=null)
+            page=Integer.parseInt(intent.getStringExtra(MyActivity.PAGE));
+        url+="&page="+page;
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
@@ -217,14 +221,14 @@ if(search!=null){
                  p= Pattern.compile("file_url=\"(.*?)\"");
                 Matcher m=p.matcher(html);
                 while( m.find()){
-                    if(!m.group(1).contains(".swf")){
+                    if(!m.group(1).contains(".swf")&&!m.group().contains(".webm")){
                         fullImageUrl.add(m.group(1));
                       }
                 }
                 p= Pattern.compile("preview_url=\"(.*?)\"");
                  m=p.matcher(html);
                 while( m.find()){
-                    if(!m.group(1).contains(".swf")){
+                    if(!m.group(1).contains("-preview.png")){
                         thumbImageUrl.add(m.group(1));
                     }
                 }
@@ -288,8 +292,38 @@ if(search!=null){
             // - get element from your dataset at this position
             // - replace the contents of the view with that element
            //Picasso.with(context).setIndicatorsEnabled(true);
-            if(useFull)
-            Picasso.with(context).load(fullImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/colcount,height/colcount).centerInside().into(holder.mImageView);
+            if(useFull){
+           // Picasso.with(context).load(fullImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/colcount,height/colcount).centerInside().into(holder.mImageView);
+                Transformation transformation = new Transformation() {
+
+                    @Override public Bitmap transform(Bitmap source) {
+                        int targetWidth = (width/colcount)-(holder.mImageView.getPaddingLeft()*2);
+
+                        double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
+                        int targetHeight = (int) (targetWidth * aspectRatio);
+                        Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                        if (result != source) {
+                            // Same bitmap is returned if sizes are the same
+                            source.recycle();
+                        }
+                        return result;
+                    }
+
+                    @Override public String key() {
+                        return "transformation" + " desiredWidth";
+                    }
+                };
+
+
+                Picasso.with(this.context)
+                        .load(fullImageUrl.get(position))
+                        .placeholder(R.drawable.ic_action_refresh)
+                        .error(android.R.drawable.stat_notify_error)
+                        .transform(transformation)
+                        .into(holder.mImageView);
+
+
+            }
             else
                 Picasso.with(context).load(thumbImageUrl.get(position)).placeholder(R.drawable.ic_action_refresh).resize(width/colcount,height/colcount).centerInside().into(holder.mImageView);
             holder.mPos=position;
@@ -307,7 +341,52 @@ if(search!=null){
             if(mCurrentAnimator!=null){
                 mCurrentAnimator.cancel();
             }
-            Picasso.with(context).load(URL).placeholder(R.drawable.ic_action_refresh).into(zoomView);
+            //Picasso.with(context).load(URL).placeholder(R.drawable.ic_action_refresh).into(zoomView);
+            Transformation transformation = new Transformation() {
+
+                @Override public Bitmap transform(Bitmap source) {
+                    double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
+                    int targetWidth=1050;
+                    int targetHeight=1920;
+                    if (source.getWidth()>4069){
+                         targetWidth = 4069;
+                         targetHeight = (int) (targetWidth * aspectRatio);
+
+                    }
+                    if(source.getHeight()>4069){
+                        targetHeight = 4069;
+                        targetWidth = (int) (targetHeight * aspectRatio);
+
+                    }
+                    if((source.getHeight()<=4069&&source.getWidth()<=4069)){
+                        targetHeight=source.getHeight();
+                        targetWidth=source.getWidth();
+                    }
+                    Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                    if (result != source) {
+                        // Same bitmap is returned if sizes are the same
+                        source.recycle();
+                    }
+                    return result;
+                }
+
+                @Override public String key() {
+                    return "transformation" + " desiredWidth";
+                }
+            };
+
+
+            Picasso.with(this.context)
+                    .load(URL)
+                    .placeholder(R.drawable.ic_action_refresh)
+                    .error(android.R.drawable.stat_notify_error)
+                    .transform(transformation)
+                    .into(zoomView);
+
+
+
+
+
             final Rect startBounds=new Rect();
             final Rect finalBounds =new Rect();
             final Point globalOffset=new Point();
