@@ -4,11 +4,13 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.internal.widget.AdapterViewCompat;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -40,7 +42,8 @@ CheckBox CB;//NSFW content
        editor = sharedPref.edit();
         setContentView(R.layout.activity_settings);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setLogo(R.drawable.ic_launcher2);
+       // toolbar.setLogo(R.drawable.ic_launcher2);
+        toolbar.setTitle("");
         if (toolbar != null) {
             setSupportActionBar(toolbar);
         }
@@ -143,6 +146,20 @@ CheckBox CB;//NSFW content
         editor.putStringSet("blacklist",new HashSet<String>(BLlist));
     editor.apply();
 
+    }
+    public void backtostart(View v){
+        Intent intent=new Intent(settings.this,MyActivity.class);
+        startActivity(intent);
+
+    }
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+        if (keyCode == KeyEvent.KEYCODE_BACK ) {
+           backtostart(null);
+            return true;
+        }
+
+        return super.onKeyDown(keyCode, event);
     }
     public void onItemSelected(AdapterView<?> parent, View view,
                                int pos, long id) {

@@ -99,6 +99,7 @@ public class MyActivity extends ActionBarActivity {
                 }
                 return handled;
             }
+
         });
         SharedPreferences sharedPref =this.getSharedPreferences("com.illford.e621",Context.MODE_PRIVATE);
         colcount=sharedPref.getInt("colcount",2);
@@ -299,8 +300,13 @@ if(search!=null){
                     @Override public Bitmap transform(Bitmap source) {
                         int targetWidth = (width/colcount)-(holder.mImageView.getPaddingLeft()*2);
 
-                        double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
-                        int targetHeight = (int) (targetWidth * aspectRatio);
+                        double aspectRatioH = (double) source.getHeight() / (double) source.getWidth();
+                        double aspectRatioW = (double) source.getWidth() / (double) source.getHeight();
+                        int targetHeight = (int) (targetWidth * aspectRatioH);
+                        if(targetHeight>4096){
+                            targetHeight=4096;
+                            targetWidth=(int)(targetHeight*aspectRatioW);
+                        }
                         Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
                         if (result != source) {
                             // Same bitmap is returned if sizes are the same
@@ -346,19 +352,28 @@ if(search!=null){
 
                 @Override public Bitmap transform(Bitmap source) {
                     double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
+                    double aspectRatioW = (double) source.getWidth() / (double) source.getHeight();
                     int targetWidth=1050;
                     int targetHeight=1920;
-                    if (source.getWidth()>4069){
-                         targetWidth = 4069;
+                    if (source.getWidth()>4096){
+                         targetWidth = 4096;
                          targetHeight = (int) (targetWidth * aspectRatio);
+                        if(targetHeight>4096){
+                            targetHeight=4096;
+                            targetWidth=(int)(targetHeight*aspectRatioW);
+                        }
 
                     }
-                    if(source.getHeight()>4069){
-                        targetHeight = 4069;
-                        targetWidth = (int) (targetHeight * aspectRatio);
+                    if(source.getHeight()>4096){
+                        targetHeight = 4096;
+                        targetWidth = (int) (targetHeight * aspectRatioW);
+                        if(targetWidth>4096){
+                            targetWidth = 4096;
+                            targetHeight = (int) (targetWidth * aspectRatio);
+                        }
 
                     }
-                    if((source.getHeight()<=4069&&source.getWidth()<=4069)){
+                    if((source.getHeight()<=4096)&&(source.getWidth()<=4096)){
                         targetHeight=source.getHeight();
                         targetWidth=source.getWidth();
                     }

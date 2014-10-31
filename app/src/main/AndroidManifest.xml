@@ -15,7 +15,8 @@
             android:name="illford.e621.MyActivity"
             android:label="@string/app_name"
             android:configChanges=""
-            android:windowSoftInputMode="stateHidden">
+            android:windowSoftInputMode="stateHidden|adjustNothing"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
