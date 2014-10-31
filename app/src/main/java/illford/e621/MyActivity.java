@@ -27,6 +27,7 @@ import android.view.MenuItem;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -85,8 +86,12 @@ public class MyActivity extends ActionBarActivity {
         setContentView(R.layout.activity_my);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
         toolbar.setLogo(R.drawable.ic_launcher2);
        toolbar.setTitle("");
+
+        toolbar.setPadding(0,getStatusBarHeight(),0,0);
+
            setSupportActionBar(toolbar);
         final EditText editText = (EditText) findViewById(R.id.editsearch);
         editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -147,7 +152,82 @@ if(search!=null){
         new getindex().execute(url);
 
     }
+@Override
+public void  onRestart(){
+    ConnectivityManager cm =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
+    NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+    String url="https://e621.net/post/index.xml";
+    Intent intent = getIntent();
+    super.onRestart();
+    setContentView(R.layout.activity_my);
+
+    Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+    toolbar.setLogo(R.drawable.ic_launcher2);
+    toolbar.setTitle("");
+
+    toolbar.setPadding(0,getStatusBarHeight(),0,0);
+
+    setSupportActionBar(toolbar);
+    final EditText editText = (EditText) findViewById(R.id.editsearch);
+    editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        @Override
+        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+            boolean handled = false;
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                search(editText);
+                handled = true;
+            }
+            return handled;
+        }
+
+    });
+    SharedPreferences sharedPref =this.getSharedPreferences("com.illford.e621",Context.MODE_PRIVATE);
+    colcount=sharedPref.getInt("colcount",2);
+    useFull = !(activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)||sharedPref.getBoolean("forcefull",false);
+    if(!sharedPref.getBoolean("NSFW",false)){
+        url+="?tags=rating%3As";
+    }
+    else { url+="?tags=";}
+
+    String BL = "";
+    Set<String> blset = sharedPref.getStringSet("blacklist", new HashSet<String>());
+    String[] BLset = blset.toArray(new String[blset.size()]);
+    for (int x = 0; x < BLset.length; x++) {
+        BL += "+-" + BLset[x];
+    }
+    url += BL;
+    search = intent.getStringExtra(MyActivity.EXTRA_MESSAGE);
+    if(search!=null){
+        Pattern p= Pattern.compile("(\\w+)");
+        Matcher m=p.matcher(search);
+        while( m.find()){
+            url+="+"+m.group(1);
+
+        }}
+    if(intent.getStringExtra(MyActivity.PAGE)!=null)
+        page=Integer.parseInt(intent.getStringExtra(MyActivity.PAGE));
+    url+="&page="+page;
+    Display display = getWindowManager().getDefaultDisplay();
+    Point size = new Point();
+    display.getSize(size);
+    width = size.x;
+    height = size.y;
+    mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
+
+    // improve performance if you know that changes in content
+    // do not change the size of the RecyclerView
+    mRecyclerView.setHasFixedSize(true);
+
+    // use a linear layout manager
+    mLayoutManager = new StaggeredGridLayoutManager(colcount,1);
+    mRecyclerView.setLayoutManager(mLayoutManager);
+    // specify an adapter (see also next example)
+    mAdapter = new MyAdapter(getApplicationContext());
+    mRecyclerView.setAdapter(mAdapter);
+    new getindex().execute(url);
+}
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
 
@@ -174,6 +254,14 @@ if(search!=null){
     public void startSettings(){
         Intent intent = new Intent(this, settings.class);
         startActivity(intent);
+    }
+    public int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
     public void search(View v){
                         String searchtxt="";
@@ -348,6 +436,7 @@ if(search!=null){
                 mCurrentAnimator.cancel();
             }
             //Picasso.with(context).load(URL).placeholder(R.drawable.ic_action_refresh).into(zoomView);
+           // Picasso.with(context).setIndicatorsEnabled(true);
             Transformation transformation = new Transformation() {
 
                 @Override public Bitmap transform(Bitmap source) {
@@ -378,10 +467,10 @@ if(search!=null){
                         targetWidth=source.getWidth();
                     }
                     Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
-                    if (result != source) {
+                  /*  if (result != source) {
                         // Same bitmap is returned if sizes are the same
                         source.recycle();
-                    }
+                    }*/
                     return result;
                 }
 

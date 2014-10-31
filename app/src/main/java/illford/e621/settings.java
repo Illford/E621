@@ -44,6 +44,8 @@ CheckBox CB;//NSFW content
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
        // toolbar.setLogo(R.drawable.ic_launcher2);
         toolbar.setTitle("");
+
+        toolbar.setPadding(0,getStatusBarHeight(),0,0);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
         }
@@ -152,15 +154,15 @@ CheckBox CB;//NSFW content
         startActivity(intent);
 
     }
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+   // @Override
+   /* public boolean onKeyDown(int keyCode, KeyEvent event)  {
         if (keyCode == KeyEvent.KEYCODE_BACK ) {
            backtostart(null);
             return true;
         }
 
         return super.onKeyDown(keyCode, event);
-    }
+    }*/
     public void onItemSelected(AdapterView<?> parent, View view,
                                int pos, long id) {
         // An item was selected. You can retrieve the selected item using
@@ -171,6 +173,15 @@ CheckBox CB;//NSFW content
     public void onNothingSelected(AdapterView<?> parent) {
 
         //editor.putInt("colcount",1);
+    }
+
+    public int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
