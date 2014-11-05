@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.internal.widget.AdapterViewCompat;
@@ -20,6 +22,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -45,7 +48,12 @@ CheckBox CB;//NSFW content
        // toolbar.setLogo(R.drawable.ic_launcher2);
         toolbar.setTitle("");
 
-        toolbar.setPadding(0,getStatusBarHeight(),0,0);
+        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+        if (currentapiVersion >= Build.VERSION_CODES.KITKAT){
+            toolbar.setPadding(0,getStatusBarHeight(),0,0);
+            // Do something for froyo and above versions
+        }
+
         if (toolbar != null) {
             setSupportActionBar(toolbar);
         }
@@ -56,6 +64,7 @@ CheckBox CB;//NSFW content
 // Specify the layout to use when the list of choices appears
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 // Apply the adapter to the spinner
+
         spinner.setAdapter(adapter);
 
         spinner.setOnItemSelectedListener(this);
@@ -167,6 +176,7 @@ CheckBox CB;//NSFW content
                                int pos, long id) {
         // An item was selected. You can retrieve the selected item using
         // parent.getItemAtPosition(pos)
+
        editor.putInt("colcount",pos+1);editor.apply();
     }
 

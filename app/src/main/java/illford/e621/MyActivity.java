@@ -8,11 +8,20 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.opengl.GLES10;
+import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.RecyclerView;
@@ -20,6 +29,7 @@ import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Display;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -48,14 +58,19 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.microedition.khronos.opengles.GL10;
 
 
 public class MyActivity extends ActionBarActivity {
@@ -77,6 +92,7 @@ public class MyActivity extends ActionBarActivity {
     int colcount;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         ConnectivityManager cm =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -89,8 +105,11 @@ public class MyActivity extends ActionBarActivity {
 
         toolbar.setLogo(R.drawable.ic_launcher2);
        toolbar.setTitle("");
-
-        toolbar.setPadding(0,getStatusBarHeight(),0,0);
+        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+        if (currentapiVersion >= Build.VERSION_CODES.KITKAT){
+            toolbar.setPadding(0,getStatusBarHeight(),0,0);
+            // Do something for froyo and above versions
+        }
 
            setSupportActionBar(toolbar);
         final EditText editText = (EditText) findViewById(R.id.editsearch);
@@ -139,6 +158,7 @@ if(search!=null){
          height = size.y;
         mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
 
+
         // improve performance if you know that changes in content
         // do not change the size of the RecyclerView
         mRecyclerView.setHasFixedSize(true);
@@ -167,7 +187,12 @@ public void  onRestart(){
     toolbar.setLogo(R.drawable.ic_launcher2);
     toolbar.setTitle("");
 
-    toolbar.setPadding(0,getStatusBarHeight(),0,0);
+    int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+    if (currentapiVersion >= Build.VERSION_CODES.KITKAT){
+        toolbar.setPadding(0,getStatusBarHeight(),0,0);
+        // Do something for froyo and above versions
+    }
+
 
     setSupportActionBar(toolbar);
     final EditText editText = (EditText) findViewById(R.id.editsearch);
@@ -304,6 +329,7 @@ public void  onRestart(){
                 {
                     str.append(line);
                 }
+                //in.reset();
                 in.close();
                 html = str.toString();
                 Pattern p;
@@ -386,15 +412,16 @@ public void  onRestart(){
                 Transformation transformation = new Transformation() {
 
                     @Override public Bitmap transform(Bitmap source) {
-                        int targetWidth = (width/colcount)-(holder.mImageView.getPaddingLeft()*2);
+                        int targetWidth = ((width-holder.mImageView.getPaddingLeft()*2)/colcount);
 
                         double aspectRatioH = (double) source.getHeight() / (double) source.getWidth();
                         double aspectRatioW = (double) source.getWidth() / (double) source.getHeight();
                         int targetHeight = (int) (targetWidth * aspectRatioH);
-                        if(targetHeight>4096){
-                            targetHeight=4096;
+                        if(targetHeight>2048){
+                            targetHeight=2048;
                             targetWidth=(int)(targetHeight*aspectRatioW);
                         }
+
                         Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
                         if (result != source) {
                             // Same bitmap is returned if sizes are the same
@@ -437,40 +464,42 @@ public void  onRestart(){
             }
             //Picasso.with(context).load(URL).placeholder(R.drawable.ic_action_refresh).into(zoomView);
            // Picasso.with(context).setIndicatorsEnabled(true);
-            Transformation transformation = new Transformation() {
+            /*Transformation transformation = new Transformation() {
 
                 @Override public Bitmap transform(Bitmap source) {
                     double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
                     double aspectRatioW = (double) source.getWidth() / (double) source.getHeight();
+                    int[] maxSize = new int[1];
+                    GLES10.glGetIntegerv(GL10.GL_MAX_TEXTURE_SIZE, maxSize, 0);
                     int targetWidth=1050;
                     int targetHeight=1920;
-                    if (source.getWidth()>4096){
-                         targetWidth = 4096;
+                    if (source.getWidth()>maxSize[0]){
+                         targetWidth = maxSize[0];
                          targetHeight = (int) (targetWidth * aspectRatio);
-                        if(targetHeight>4096){
-                            targetHeight=4096;
+                        if(targetHeight>maxSize[0]){
+                            targetHeight=maxSize[0];
                             targetWidth=(int)(targetHeight*aspectRatioW);
                         }
 
                     }
-                    if(source.getHeight()>4096){
-                        targetHeight = 4096;
+                    if(source.getHeight()>maxSize[0]){
+                        targetHeight = maxSize[0];
                         targetWidth = (int) (targetHeight * aspectRatioW);
-                        if(targetWidth>4096){
-                            targetWidth = 4096;
+                        if(targetWidth>maxSize[0]){
+                            targetWidth = maxSize[0];
                             targetHeight = (int) (targetWidth * aspectRatio);
                         }
 
                     }
-                    if((source.getHeight()<=4096)&&(source.getWidth()<=4096)){
+                    if((source.getHeight()<=maxSize[0])&&(source.getWidth()<=maxSize[0])){
                         targetHeight=source.getHeight();
                         targetWidth=source.getWidth();
-                    }
                     Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                    }*/
                   /*  if (result != source) {
                         // Same bitmap is returned if sizes are the same
                         source.recycle();
-                    }*/
+                    }
                     return result;
                 }
 
@@ -479,16 +508,20 @@ public void  onRestart(){
                 }
             };
 
+                Picasso.with(this.context)
+                        .load(createLargeDrawable(URL))
+                        .placeholder(R.drawable.ic_action_refresh)
+                        .error(android.R.drawable.stat_notify_error)
+                        .transform(transformation)
+                        .into(zoomView);
+*/
 
-            Picasso.with(this.context)
-                    .load(URL)
-                    .placeholder(R.drawable.ic_action_refresh)
-                    .error(android.R.drawable.stat_notify_error)
-                    .transform(transformation)
-                    .into(zoomView);
+            try {
+                zoomView.setImageDrawable(createLargeDrawable(URL));
 
-
-
+            }catch(IOException e){
+                e.printStackTrace();
+            }
 
 
             final Rect startBounds=new Rect();
@@ -587,6 +620,56 @@ public void  onRestart(){
                     mCurrentAnimator = set;
                 }
             });
+        }
+    }
+
+    private static final int MAX_SIZE = 2048;
+
+    private Drawable createLargeDrawable(String src) throws IOException {
+        URL url = new URL(src);
+        InputStream is =(InputStream) url.getContent();
+        BitmapRegionDecoder brd = BitmapRegionDecoder.newInstance(is, true);
+        is.close();
+        try {
+            if (brd.getWidth() <= MAX_SIZE && brd.getHeight() <= MAX_SIZE) {
+                is =(InputStream) url.getContent();
+                BitmapDrawable bd= new BitmapDrawable(getResources(), is);
+                is.close();
+               return bd;
+            }
+
+            int rowCount = (int) Math.ceil((float) brd.getHeight() / (float) MAX_SIZE);
+            int colCount = (int) Math.ceil((float) brd.getWidth() / (float) MAX_SIZE);
+
+            BitmapDrawable[] drawables = new BitmapDrawable[rowCount * colCount];
+
+            for (int i = 0; i < rowCount; i++) {
+
+                int top = MAX_SIZE * i;
+                int bottom = i == rowCount - 1 ? brd.getHeight() : top + MAX_SIZE;
+
+                for (int j = 0; j < colCount; j++) {
+                    int left = MAX_SIZE * j;
+                    int right = j == colCount - 1 ? brd.getWidth() : left + MAX_SIZE;
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    Bitmap b = brd.decodeRegion(new Rect(left, top, right, bottom), options);
+                    BitmapDrawable bd = new BitmapDrawable(getResources(), b);
+                    bd.setGravity(Gravity.TOP | Gravity.LEFT);
+                    drawables[i * colCount + j] = bd;
+                }
+            }
+
+            LayerDrawable ld = new LayerDrawable(drawables);
+            for (int i = 0; i < rowCount; i++) {
+                for (int j = 0; j < colCount; j++) {
+                    ld.setLayerInset(i * colCount + j, MAX_SIZE * j, MAX_SIZE * i, 0, 0);
+                }
+            }
+
+            return ld;
+        }
+        finally {
+            brd.recycle();
         }
     }
 

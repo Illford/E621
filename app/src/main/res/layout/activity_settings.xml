@@ -32,6 +32,7 @@
         android:textSize="15sp"
         android:layout_below="@id/spacer0"
         android:textColor="#000000"
+        android:layout_marginLeft="5dp"
         android:layout_marginStart="5dp"
         />
     <CheckBox
@@ -39,6 +40,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
         android:layout_alignBaseline="@+id/NSFWtxt"/>
     <Space
         android:id="@+id/space1"
@@ -65,12 +67,14 @@
         android:textSize="15sp"
         android:layout_below="@+id/space2"
         android:textColor="#000000"
+        android:layout_marginLeft="5dp"
         android:layout_marginStart="5dp"/>
     <CheckBox
         android:id="@+id/datacb"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
         android:layout_alignBaseline="@+id/datatxt"/>
     <Space
         android:id="@+id/space3"
@@ -97,13 +101,17 @@
         android:textSize="15sp"
         android:layout_below="@+id/space2a"
         android:textColor="#000000"
+        android:layout_marginLeft="5dp"
         android:layout_marginStart="5dp"/>
     <Spinner
         android:id="@+id/colpick"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        android:layout_alignBaseline="@+id/coltxt"/>
+        android:layout_alignBaseline="@+id/coltxt"
+
+        />
     <Space
         android:id="@+id/space3a"
         android:layout_width="match_parent"
@@ -128,6 +136,7 @@
         android:layout_below="@id/space4"
         android:textSize="20sp"
         android:textColor="#000000"
+        android:layout_marginLeft="5dp"
         android:layout_marginStart="5dp"/>
     <TextView
         android:id="@+id/tagtext"
@@ -137,13 +146,15 @@
         android:text="@string/taghelp"
         android:textSize="15sp"
         android:textColor="#000000"
-        android:layout_marginStart="5dp"/>
+        android:layout_marginStart="5dp"
+        android:layout_marginLeft="5dp"/>
     <EditText
         android:id="@+id/editblacklist"
         android:layout_width="match_parent"
         android:layout_height="150dp"
         android:layout_below="@id/tagtext"
         android:textColor="#000000"
-        android:layout_marginStart="5dp"/>
+        android:layout_marginStart="5dp"
+        android:layout_marginLeft="5dp"/>
 
 </RelativeLayout>
