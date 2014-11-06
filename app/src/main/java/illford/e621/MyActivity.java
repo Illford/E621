@@ -4,6 +4,8 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -23,10 +25,12 @@ import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
+import android.text.method.Touch;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -63,10 +67,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -86,6 +92,8 @@ public class MyActivity extends ActionBarActivity {
      RecyclerView.LayoutManager mLayoutManager;
     int width;
     int height;
+
+    private Dialog progressDialog;
     int page=1;
     String search="";
     boolean useFull;
@@ -93,6 +101,8 @@ public class MyActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
         ConnectivityManager cm =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -174,6 +184,8 @@ if(search!=null){
     }
 @Override
 public void  onRestart(){
+    StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+    StrictMode.setThreadPolicy(policy);
     ConnectivityManager cm =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
     NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -462,67 +474,13 @@ public void  onRestart(){
             if(mCurrentAnimator!=null){
                 mCurrentAnimator.cancel();
             }
-            //Picasso.with(context).load(URL).placeholder(R.drawable.ic_action_refresh).into(zoomView);
-           // Picasso.with(context).setIndicatorsEnabled(true);
-            /*Transformation transformation = new Transformation() {
 
-                @Override public Bitmap transform(Bitmap source) {
-                    double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
-                    double aspectRatioW = (double) source.getWidth() / (double) source.getHeight();
-                    int[] maxSize = new int[1];
-                    GLES10.glGetIntegerv(GL10.GL_MAX_TEXTURE_SIZE, maxSize, 0);
-                    int targetWidth=1050;
-                    int targetHeight=1920;
-                    if (source.getWidth()>maxSize[0]){
-                         targetWidth = maxSize[0];
-                         targetHeight = (int) (targetWidth * aspectRatio);
-                        if(targetHeight>maxSize[0]){
-                            targetHeight=maxSize[0];
-                            targetWidth=(int)(targetHeight*aspectRatioW);
-                        }
-
-                    }
-                    if(source.getHeight()>maxSize[0]){
-                        targetHeight = maxSize[0];
-                        targetWidth = (int) (targetHeight * aspectRatioW);
-                        if(targetWidth>maxSize[0]){
-                            targetWidth = maxSize[0];
-                            targetHeight = (int) (targetWidth * aspectRatio);
-                        }
-
-                    }
-                    if((source.getHeight()<=maxSize[0])&&(source.getWidth()<=maxSize[0])){
-                        targetHeight=source.getHeight();
-                        targetWidth=source.getWidth();
-                    Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
-                    }*/
-                  /*  if (result != source) {
-                        // Same bitmap is returned if sizes are the same
-                        source.recycle();
-                    }
-                    return result;
-                }
-
-                @Override public String key() {
-                    return "transformation" + " desiredWidth";
-                }
-            };
-
+        if(URL.endsWith(".gif")){
                 Picasso.with(this.context)
-                        .load(createLargeDrawable(URL))
+                        .load(URL)
                         .placeholder(R.drawable.ic_action_refresh)
                         .error(android.R.drawable.stat_notify_error)
-                        .transform(transformation)
                         .into(zoomView);
-*/
-
-            try {
-                zoomView.setImageDrawable(createLargeDrawable(URL));
-
-            }catch(IOException e){
-                e.printStackTrace();
-            }
-
 
             final Rect startBounds=new Rect();
             final Rect finalBounds =new Rect();
@@ -620,58 +578,241 @@ public void  onRestart(){
                     mCurrentAnimator = set;
                 }
             });
+
+
+        }else{
+                createLargeDrawable task=new createLargeDrawable();
+                task.execute(new MyTaskParams(thumbView,zoomView,URL));
+        }
         }
     }
 
-    private static final int MAX_SIZE = 2048;
+    private static final int MAX_SIZE = 1024;
 
-    private Drawable createLargeDrawable(String src) throws IOException {
-        URL url = new URL(src);
-        InputStream is =(InputStream) url.getContent();
-        BitmapRegionDecoder brd = BitmapRegionDecoder.newInstance(is, true);
-        is.close();
-        try {
-            if (brd.getWidth() <= MAX_SIZE && brd.getHeight() <= MAX_SIZE) {
-                is =(InputStream) url.getContent();
-                BitmapDrawable bd= new BitmapDrawable(getResources(), is);
-                is.close();
-               return bd;
-            }
+    private static class MyTaskParams {
+        View thumb;
+        ImageView zoom;
+        String URL;
 
-            int rowCount = (int) Math.ceil((float) brd.getHeight() / (float) MAX_SIZE);
-            int colCount = (int) Math.ceil((float) brd.getWidth() / (float) MAX_SIZE);
-
-            BitmapDrawable[] drawables = new BitmapDrawable[rowCount * colCount];
-
-            for (int i = 0; i < rowCount; i++) {
-
-                int top = MAX_SIZE * i;
-                int bottom = i == rowCount - 1 ? brd.getHeight() : top + MAX_SIZE;
-
-                for (int j = 0; j < colCount; j++) {
-                    int left = MAX_SIZE * j;
-                    int right = j == colCount - 1 ? brd.getWidth() : left + MAX_SIZE;
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    Bitmap b = brd.decodeRegion(new Rect(left, top, right, bottom), options);
-                    BitmapDrawable bd = new BitmapDrawable(getResources(), b);
-                    bd.setGravity(Gravity.TOP | Gravity.LEFT);
-                    drawables[i * colCount + j] = bd;
-                }
-            }
-
-            LayerDrawable ld = new LayerDrawable(drawables);
-            for (int i = 0; i < rowCount; i++) {
-                for (int j = 0; j < colCount; j++) {
-                    ld.setLayerInset(i * colCount + j, MAX_SIZE * j, MAX_SIZE * i, 0, 0);
-                }
-            }
-
-            return ld;
-        }
-        finally {
-            brd.recycle();
+        MyTaskParams(View thumb, ImageView zoom, String url) {
+            this.thumb = thumb;
+            this.zoom = zoom;
+            this.URL = url;
         }
     }
 
+
+    private class createLargeDrawable extends AsyncTask<MyTaskParams,Void,Drawable>{
+        View thumbView;
+        ImageView zoomView;
+        protected Drawable doInBackground(MyTaskParams...src){
+            BitmapRegionDecoder brd=null;
+            InputStream is=null;
+                URL url=null;
+                thumbView=src[0].thumb;
+                zoomView=src[0].zoom;
+            try{
+                 url=new URL(src[0].URL);}
+            catch(MalformedURLException e){
+                e.printStackTrace();
+            }
+            try{
+             is = (InputStream) url.getContent();
+             brd = BitmapRegionDecoder.newInstance(is, true);
+            is.close();}
+            catch (IOException e){
+                e.printStackTrace();
+            }
+            try {
+                if (brd.getWidth() <= MAX_SIZE && brd.getHeight() <= MAX_SIZE) {
+                    is = (InputStream) url.getContent();
+                   final BitmapDrawable bd = new BitmapDrawable(getResources(), is);
+                    is.close();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            ImageView ZV=(TouchImageView) findViewById(R.id.expanded_image);
+                            ZV.setImageDrawable(bd);
+                            ZV.setVisibility(View.VISIBLE);
+//stuff that updates ui
+
+                        }
+                    });
+                    return bd;
+
+                }
+                else{
+
+                int rowCount = (int) Math.ceil((float) brd.getHeight() / (float) MAX_SIZE);
+                int colCount = (int) Math.ceil((float) brd.getWidth() / (float) MAX_SIZE);
+
+                BitmapDrawable[] drawables = new BitmapDrawable[rowCount * colCount];
+
+                for (int i = 0; i < rowCount; i++) {
+
+                    int top = MAX_SIZE * i;
+                    int bottom = i == rowCount - 1 ? brd.getHeight() : top + MAX_SIZE;
+
+                    for (int j = 0; j < colCount; j++) {
+                        int left = MAX_SIZE * j;
+                        int right = j == colCount - 1 ? brd.getWidth() : left + MAX_SIZE;
+                        BitmapFactory.Options options = new BitmapFactory.Options();
+                        Bitmap b = brd.decodeRegion(new Rect(left, top, right, bottom), options);
+                        BitmapDrawable bd = new BitmapDrawable(getResources(), b);
+                        bd.setGravity(Gravity.TOP | Gravity.LEFT);
+                        drawables[i * colCount + j] = bd;
+                    }
+                }
+
+               final LayerDrawable ld = new LayerDrawable(drawables);
+                for (int i = 0; i < rowCount; i++) {
+                    for (int j = 0; j < colCount; j++) {
+                        ld.setLayerInset(i * colCount + j, MAX_SIZE * j, MAX_SIZE * i, 0, 0);
+                    }
+                }
+
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+//stuff that updates ui
+                            ImageView ZV=(TouchImageView) findViewById(R.id.expanded_image);
+                            ZV.setImageDrawable(ld);
+                            ZV.setVisibility(View.VISIBLE);
+
+                        }
+                    });
+                return ld;
+            }
+
+            }
+            catch(IOException e){
+                e.printStackTrace();
+                return null;
+            }
+           finally {
+                brd.recycle();
+            }
+        }
+        @Override
+        protected void onPreExecute() {
+            MyActivity.this.progressDialog = ProgressDialog.show(MyActivity.this, "",
+                    "Loading...", true);
+
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+        }
+        @Override
+        protected void onPostExecute(Drawable result) {
+
+            super.onPostExecute(result);
+            MyActivity.this.progressDialog.dismiss();
+
+            {
+                final Rect startBounds=new Rect();
+                final Rect finalBounds =new Rect();
+                final Point globalOffset=new Point();
+                thumbView.getGlobalVisibleRect(startBounds);
+                findViewById(R.id.container).getGlobalVisibleRect(finalBounds,globalOffset);
+                startBounds.offset(-globalOffset.x,-globalOffset.y);
+                finalBounds.offset(-globalOffset.x,-globalOffset.y);
+                float startScale;
+                if((float)finalBounds.width()/finalBounds.height()>(float)startBounds.width()/startBounds.height()){
+                    startScale=(float)startBounds.height()/finalBounds.height();
+                    float startWidth=startScale*finalBounds.width();
+                    float deltaWidth = (startWidth - startBounds.width()) / 2;
+                    startBounds.left -= deltaWidth;
+                    startBounds.right += deltaWidth;
+                }else {
+                    startScale = (float) startBounds.width() / finalBounds.width();
+                    float startHeight = startScale * finalBounds.height();
+                    float deltaHeight = (startHeight - startBounds.height()) / 2;
+                    startBounds.top -= deltaHeight;
+                    startBounds.bottom += deltaHeight;
+                }
+                thumbView.setAlpha(0f);
+                zoomView.setVisibility(View.VISIBLE);
+                zoomView.setPivotX(0f);
+                zoomView.setPivotY(0f);
+                AnimatorSet set = new AnimatorSet();
+                set
+                        .play(ObjectAnimator.ofFloat(zoomView, View.X,
+                                startBounds.left, finalBounds.left))
+                        .with(ObjectAnimator.ofFloat(zoomView, View.Y,
+                                startBounds.top, finalBounds.top))
+                        .with(ObjectAnimator.ofFloat(zoomView, View.SCALE_X,
+                                startScale, 1f)).with(ObjectAnimator.ofFloat(zoomView,
+                        View.SCALE_Y, startScale, 1f));
+                set.setDuration(mShortAnimationDuration);
+                set.setInterpolator(new DecelerateInterpolator());
+                set.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        mCurrentAnimator = null;
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+                        mCurrentAnimator = null;
+                    }
+                });
+                set.start();
+                mCurrentAnimator = set;
+
+                // Upon clicking the zoomed-in image, it should zoom back down
+                // to the original bounds and show the thumbnail instead of
+                // the expanded image.
+                final float startScaleFinal = startScale;
+                zoomView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if (mCurrentAnimator != null) {
+                            mCurrentAnimator.cancel();
+                        }
+
+                        // Animate the four positioning/sizing properties in parallel,
+                        // back to their original values.
+                        AnimatorSet set = new AnimatorSet();
+                        set.play(ObjectAnimator
+                                .ofFloat(zoomView, View.X, startBounds.left))
+                                .with(ObjectAnimator
+                                        .ofFloat(zoomView,
+                                                View.Y,startBounds.top))
+                                .with(ObjectAnimator
+                                        .ofFloat(zoomView,
+                                                View.SCALE_X, startScaleFinal))
+                                .with(ObjectAnimator
+                                        .ofFloat(zoomView,
+                                                View.SCALE_Y, startScaleFinal));
+                        set.setDuration(mShortAnimationDuration);
+                        set.setInterpolator(new DecelerateInterpolator());
+                        set.addListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                thumbView.setAlpha(1f);
+                                zoomView.setVisibility(View.GONE);
+                                mCurrentAnimator = null;
+                            }
+
+                            @Override
+                            public void onAnimationCancel(Animator animation) {
+                                thumbView.setAlpha(1f);
+                                zoomView.setVisibility(View.GONE);
+                                mCurrentAnimator = null;
+                            }
+                        });
+                        set.start();
+                        mCurrentAnimator = set;
+                    }
+                });
+            }
+        }
+    }
 
 }
