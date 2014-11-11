@@ -14,6 +14,9 @@
     <string name="gosearch">Search!</string>
     <string name="datatext">Use low res on cellular data \n A page can take about 80MB</string>
     <string name="colcount">Column count</string>
+    <string name="share">Share</string>
+    <string name="source">View source</string>
+    <string name="save">Save</string>
     <string-array name="numbers">
         <item>1</item>
         <item>2</item>

@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.app.Dialog;
+import android.app.DownloadManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -12,7 +13,6 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
-import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -20,17 +20,16 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.opengl.GLES10;
-import android.opengl.GLSurfaceView;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.StrictMode;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
-import android.text.method.Touch;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -38,21 +37,19 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.melnykov.fab.FloatingActionButton;
-import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Transformation;
 
@@ -62,21 +59,17 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.microedition.khronos.opengles.GL10;
 
 
 public class MyActivity extends ActionBarActivity {
@@ -87,6 +80,8 @@ public class MyActivity extends ActionBarActivity {
     String html = "";
     ArrayList<String> fullImageUrl= new ArrayList<String>();
     ArrayList<String> thumbImageUrl= new ArrayList<String>();
+    ArrayList<String> sourceURL=new ArrayList<String>();
+    ArrayList<Boolean> didskip=new ArrayList<Boolean>();
      RecyclerView mRecyclerView;
      MyAdapter mAdapter;
      RecyclerView.LayoutManager mLayoutManager;
@@ -172,10 +167,10 @@ if(search!=null){
         // improve performance if you know that changes in content
         // do not change the size of the RecyclerView
         mRecyclerView.setHasFixedSize(true);
-
         // use a linear layout manager
         mLayoutManager = new StaggeredGridLayoutManager(colcount,1);
         mRecyclerView.setLayoutManager(mLayoutManager);
+
         // specify an adapter (see also next example)
         mAdapter = new MyAdapter(getApplicationContext());
         mRecyclerView.setAdapter(mAdapter);
@@ -350,7 +345,11 @@ public void  onRestart(){
                 while( m.find()){
                     if(!m.group(1).contains(".swf")&&!m.group().contains(".webm")){
                         fullImageUrl.add(m.group(1));
+                        didskip.add(false);
                       }
+                    else
+                        didskip.add(true);
+
                 }
                 p= Pattern.compile("preview_url=\"(.*?)\"");
                  m=p.matcher(html);
@@ -358,6 +357,17 @@ public void  onRestart(){
                     if(!m.group(1).contains("-preview.png")){
                         thumbImageUrl.add(m.group(1));
                     }
+                }
+                p= Pattern.compile("source=\"(.*?)\"");
+                m=p.matcher(html);
+                int x=0;
+                while( m.find()){
+                    if(!didskip.get(x)){
+                        sourceURL.add(m.group(1));
+                        x++;
+                    }
+                    else
+                        x++;
                 }
 
 
@@ -370,15 +380,8 @@ public void  onRestart(){
         }
 
         protected void onPostExecute(String result) {
-                add();
-
-
-
+            mAdapter.notifyItemInserted(fullImageUrl.size());
         }
-    }
-    public void add(){
-        mAdapter.notifyItemInserted(fullImageUrl.size());
-
     }
     class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         Context context;
@@ -464,12 +467,12 @@ public void  onRestart(){
             holder.mImageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    zoomImageFromThumb(holder.mImageView,fullImageUrl.get(position) );
+                    zoomImageFromThumb(holder.mImageView,fullImageUrl.get(position), sourceURL.get(position) );
                 }
             });
             mShortAnimationDuration = getResources().getInteger(android.R.integer.config_shortAnimTime);
         }
-        private void zoomImageFromThumb(final View thumbView,String URL){
+        private void zoomImageFromThumb(final View thumbView,String URL, String source){
             final ImageView zoomView=(TouchImageView)findViewById(R.id.expanded_image);
             if(mCurrentAnimator!=null){
                 mCurrentAnimator.cancel();
@@ -582,7 +585,7 @@ public void  onRestart(){
 
         }else{
                 createLargeDrawable task=new createLargeDrawable();
-                task.execute(new MyTaskParams(thumbView,zoomView,URL));
+                task.execute(new MyTaskParams(thumbView,zoomView,URL,source));
         }
         }
     }
@@ -593,11 +596,13 @@ public void  onRestart(){
         View thumb;
         ImageView zoom;
         String URL;
+        String source;
 
-        MyTaskParams(View thumb, ImageView zoom, String url) {
+        MyTaskParams(View thumb, ImageView zoom, String url,String source) {
             this.thumb = thumb;
             this.zoom = zoom;
             this.URL = url;
+            this.source=source;
         }
     }
 
@@ -605,12 +610,15 @@ public void  onRestart(){
     private class createLargeDrawable extends AsyncTask<MyTaskParams,Void,Drawable>{
         View thumbView;
         ImageView zoomView;
+        URL url;
+        String source;
         protected Drawable doInBackground(MyTaskParams...src){
             BitmapRegionDecoder brd=null;
             InputStream is=null;
-                URL url=null;
+                 url=null;
                 thumbView=src[0].thumb;
                 zoomView=src[0].zoom;
+                source=src[0].source;
             try{
                  url=new URL(src[0].URL);}
             catch(MalformedURLException e){
@@ -703,17 +711,80 @@ public void  onRestart(){
 
             super.onPreExecute();
         }
+        public void Share(String url){
+            Intent sendIntent = new Intent();
+            sendIntent.setAction(Intent.ACTION_SEND);
+            sendIntent.putExtra(Intent.EXTRA_TEXT, url+" via e621 for android goo.gl/8EjcmZ");
+            sendIntent.setType("text/plain");
+            startActivity(sendIntent);
+        }
+        public void Download(String url){
+            Context context = getApplicationContext();
+            CharSequence text = "Downloading: "+Uri.parse(url);
+            int duration = Toast.LENGTH_SHORT;
 
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            DownloadManager.Request request = new DownloadManager.Request(
+                    Uri.parse(url));
+            request.setDescription(url+"");
+            request.setTitle("Downloading from E621");
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_PICTURES,"test");
+              dm.enqueue(request);
+        }
+        public void source(String url){
+            if(url.equals("")) {
+
+                Context context = getApplicationContext();
+                CharSequence text = "No source in meta-data!";
+                int duration = Toast.LENGTH_LONG;
+
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
+            }
+            else{
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setData(Uri.parse(url));
+            startActivity(i);}
+        }
         @Override
         protected void onProgressUpdate(Void... values) {
             super.onProgressUpdate(values);
         }
         @Override
         protected void onPostExecute(Drawable result) {
-
+         final FloatingActionButton FB= (FloatingActionButton) findViewById(R.id.button_floating_action);
             super.onPostExecute(result);
             MyActivity.this.progressDialog.dismiss();
+            findViewById(R.id.toolbar).setVisibility(View.INVISIBLE);
+            FB.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_overflow));
+            FB.setOnClickListener(new View.OnClickListener() {
 
+                @Override
+                public void onClick(View v) {
+
+                    PopupMenu popup = new PopupMenu(MyActivity.this, FB);
+                    //Inflating the Popup using xml file
+                    popup.getMenuInflater()
+                            .inflate(R.menu.zoomdropdown, popup.getMenu());
+
+                    //registering popup with OnMenuItemClickListener
+                    popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                        public boolean onMenuItemClick(MenuItem item) {
+                            switch (item.getItemId()){
+                                case R.id.save: Download(url+""); break;
+                                case R.id.share: Share(url+""); break;
+                                case R.id.source: source(source); break;
+                            }
+
+                            return true;
+                        }
+                    });
+                    popup.show();
+                }
+            });
             {
                 final Rect startBounds=new Rect();
                 final Rect finalBounds =new Rect();
@@ -772,6 +843,16 @@ public void  onRestart(){
                 zoomView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+
+                        findViewById(R.id.toolbar).setVisibility(View.VISIBLE);
+                        FB.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_next_item));
+                        FB.setOnClickListener(new View.OnClickListener() {
+
+                            @Override
+                            public void onClick(View v) {
+                                    next(v);
+                            }
+                        });
                         if (mCurrentAnimator != null) {
                             mCurrentAnimator.cancel();
                         }

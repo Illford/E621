@@ -8,8 +8,8 @@ android {
         applicationId "illford.e621"
         minSdkVersion 14
         targetSdkVersion 21
-        versionCode 4
-        versionName "1.2.1"
+        versionCode 5
+        versionName "2.0"
     }
     buildTypes {
         release {
